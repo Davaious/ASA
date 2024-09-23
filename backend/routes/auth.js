@@ -3,7 +3,7 @@ const router = express.Router();
 const speakeasy = require('speakeasy');
 const qrcode = require('qrcode');
 const bcrypt = require('bcrypt'); // Asegúrate de importar bcrypt para hashear contraseñas
-const db = require('../db');  // Asegúrate de que tu base de datos esté correctamente importada
+const db = require('../config/db');  // Asegúrate de que tu base de datos esté correctamente importada
 
 // Endpoint para configurar 2FA y generar un código QR
 router.post('/setup', async (req, res) => {
