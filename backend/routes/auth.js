@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const speakeasy = require('speakeasy');
 const qrcode = require('qrcode');
+const bcrypt = require('bcrypt'); // Asegúrate de importar bcrypt para hashear contraseñas
 const db = require('../db');  // Asegúrate de que tu base de datos esté correctamente importada
 
 // Endpoint para configurar 2FA y generar un código QR
@@ -23,44 +24,43 @@ router.post('/setup', async (req, res) => {
     res.status(500).json({ message: 'Error en el servidor' });
   }
 });
+
+// Endpoint para registrar un usuario
 router.post('/register', async (req, res) => {
-    const { email, password } = req.body;
-    const hashedPassword = bcrypt.hashSync(password, 10);
-    
-    try {
-      await db.query('INSERT INTO users (email, password) VALUES ($1, $2)', [email, hashedPassword]);
-      res.status(201).json({ message: 'Usuario registrado exitosamente' });
-    } catch (error) {
-      res.status(500).json({ message: 'Error en el servidor' });
-    }
-  });
+  const { email, password } = req.body;
+  const hashedPassword = bcrypt.hashSync(password, 10);
   
-module.exports = router;
+  try {
+    await db.query('INSERT INTO users (email, password) VALUES ($1, $2)', [email, hashedPassword]);
+    res.status(201).json({ message: 'Usuario registrado exitosamente' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error en el servidor' });
+  }
+});
 
 // Endpoint para verificar el token 2FA
 router.post('/verify', async (req, res) => {
-    const { userId, token } = req.body;
-  
-    try {
-      // Obtener el secreto del usuario
-      const user = await db.query('SELECT secret FROM users WHERE id = $1', [userId]);
-  
-      // Verificar el token usando speakeasy
-      const verified = speakeasy.totp.verify({
-        secret: user.rows[0].secret,
-        encoding: 'base32',
-        token,
-      });
-  
-      if (verified) {
-        res.status(200).json({ message: 'Código 2FA verificado' });
-      } else {
-        res.status(400).json({ message: 'Código 2FA inválido' });
-      }
-    } catch (error) {
-      res.status(500).json({ message: 'Error en el servidor' });
+  const { userId, token } = req.body;
+
+  try {
+    // Obtener el secreto del usuario
+    const user = await db.query('SELECT secret FROM users WHERE id = $1', [userId]);
+
+    // Verificar el token usando speakeasy
+    const verified = speakeasy.totp.verify({
+      secret: user.rows[0].secret,
+      encoding: 'base32',
+      token,
+    });
+
+    if (verified) {
+      res.status(200).json({ message: 'Código 2FA verificado' });
+    } else {
+      res.status(400).json({ message: 'Código 2FA inválido' });
     }
-  });
-  
-  module.exports = router;
-  
+  } catch (error) {
+    res.status(500).json({ message: 'Error en el servidor' });
+  }
+});
+
+module.exports = router;
