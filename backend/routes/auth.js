@@ -1,9 +1,39 @@
+// backend/routes/auth.js
 const express = require('express');
 const router = express.Router();
 const speakeasy = require('speakeasy');
 const qrcode = require('qrcode');
 const bcrypt = require('bcrypt'); // Asegúrate de importar bcrypt para hashear contraseñas
 const db = require('../config/db');  // Asegúrate de que tu base de datos esté correctamente importada
+const pool = require('../config/db');
+
+// Ruta de registro
+router.post('/register', async (req, res) => {
+  const { email, password } = req.body;
+  try {
+    const newUser = await pool.query('INSERT INTO users (email, password) VALUES ($1, $2) RETURNING *', [email, password]);
+    res.json(newUser.rows[0]);
+  } catch (error) {
+    res.status(500).send('Error al registrar');
+  }
+});
+
+// Ruta de login
+router.post('/login', async (req, res) => {
+  const { email, password } = req.body;
+  try {
+    const user = await pool.query('SELECT * FROM users WHERE email = $1 AND password = $2', [email, password]);
+    if (user.rows.length > 0) {
+      res.json({ message: 'Login exitoso' });
+    } else {
+      res.status(401).send('Credenciales incorrectas');
+    }
+  } catch (error) {
+    res.status(500).send('Error en el inicio de sesión');
+  }
+});
+
+
 
 // Endpoint para configurar 2FA y generar un código QR
 router.post('/setup', async (req, res) => {
