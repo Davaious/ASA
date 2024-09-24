@@ -16,6 +16,8 @@ const Register = () => {
     try {
       const response = await axios.post('/api/register', formData);
       console.log('Usuario registrado:', response.data);
+      // Redirige a la página de éxito después de registrar
+      navigate('/register-success');
     } catch (error) {
       console.error('Error en el registro:', error);
     }
