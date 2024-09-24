@@ -50,6 +50,7 @@ const Register = () => {
           Registrar
         </button>
       </form>
+      
     </div>
   );
 };

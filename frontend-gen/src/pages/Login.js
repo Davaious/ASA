@@ -49,6 +49,12 @@ const Login = () => {
           Iniciar Sesión
         </button>
       </form>
+      <button
+        className="mt-4 w-full bg-gray-700 text-white p-2 rounded hover:bg-gray-600 transition"
+        onClick={() => navigate('/')} // Botón para volver al Home
+      >
+        Volver al Home
+      </button>
     </div>
   );
 };

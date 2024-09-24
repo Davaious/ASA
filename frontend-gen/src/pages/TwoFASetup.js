@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import QRCode from 'qrcode.react';
+import { QRCodeCanvas } from 'qrcode.react'; // Asegúrate de que esta importación sea correcta
 
 const TwoFASetup = () => {
   const [qrCode, setQrCode] = useState('');
@@ -16,10 +16,10 @@ const TwoFASetup = () => {
         const response = await axios.post('http://localhost:5001/api/2fa/setup', {
           userId,
         });
-        setQrCode(response.data.qrCodeUrl); // Almacena el código QR
+        setQrCode(response.data.qrCodeUrl); // Almacena el código QR desde la respuesta del servidor
       } catch (err) {
         console.error('Error al configurar 2FA:', err);
-        setError('Error al configurar 2FA');
+        setError('Error al configurar 2FA'); // Mensaje de error
       }
     };
 
@@ -36,8 +36,7 @@ const TwoFASetup = () => {
             <p className="text-white mb-4">
               Escanea el siguiente código QR con tu autenticador.
             </p>
-            {/* Utiliza la librería QRCode para generar el código visual */}
-            <QRCode value={qrCode} size={256} />
+            <QRCodeCanvas value={qrCode} size={256} /> {/* Tamaño del QR */}
             <button
               className="mt-4 w-full bg-neon-green text-gray-900 p-2 rounded hover:bg-green-500 transition"
               onClick={() => navigate('/login')} // Redirige al login tras la configuración de 2FA
@@ -48,6 +47,12 @@ const TwoFASetup = () => {
         ) : (
           <p className="text-white">Generando código QR...</p>
         )}
+        <button
+          className="mt-4 w-full bg-gray-700 text-white p-2 rounded hover:bg-gray-600 transition"
+          onClick={() => navigate('/')} // Botón para volver al Home
+        >
+          Volver al Home
+        </button>
       </div>
     </div>
   );
