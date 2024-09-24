@@ -1,9 +1,11 @@
 // src/pages/Register.js
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 const Register = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
+  const navigate = useNavigate(); // Redirección
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
