@@ -35,7 +35,7 @@ router.post('/register', async (req, res) => {
   }
 });
 
-// Ruta para configurar 2FA
+// Ruta para configurar 2FA mejorada
 router.post('/setup', async (req, res) => {
   const { userId } = req.body;
   const secret = speakeasy.generateSecret({ name: 'YourAppName' });
@@ -44,11 +44,18 @@ router.post('/setup', async (req, res) => {
   try {
     await db.query('UPDATE users SET secret = $1 WHERE id = $2', [encryptedSecret, userId]);
     const qrCodeUrl = await qrcode.toDataURL(secret.otpauth_url);
-    res.status(200).json({ qrCodeUrl, secret: secret.base32 });
+    
+    res.status(200).json({ 
+      message: '2FA configurado correctamente.',
+      qrCodeUrl,
+      secret: secret.base32 
+    });
   } catch (error) {
-    res.status(500).json({ message: 'Error en el servidor' });
+    console.error('Error en la configuración 2FA:', error); // Log detallado para debugging
+    res.status(500).json({ message: 'Error en la configuración de 2FA. Intenta de nuevo más tarde.' });
   }
 });
+
 
 // Ruta de login con verificación 2FA mejorada
 router.post('/login', async (req, res) => {
