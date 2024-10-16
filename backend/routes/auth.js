@@ -50,19 +50,19 @@ router.post('/setup', async (req, res) => {
   }
 });
 
-// Ruta de login con verificación 2FA
+// Ruta de login con verificación 2FA mejorada
 router.post('/login', async (req, res) => {
   const { email, password, token } = req.body;
   
   try {
     const user = await db.query('SELECT * FROM users WHERE email = $1', [email]);
     if (user.rows.length === 0) {
-      return res.status(401).send('Email no registrado');
+      return res.status(401).json({ message: 'Email no registrado' });
     }
 
     const validPassword = bcrypt.compareSync(password, user.rows[0].password);
     if (!validPassword) {
-      return res.status(401).send('Contraseña incorrecta');
+      return res.status(401).json({ message: 'Contraseña incorrecta' });
     }
 
     if (user.rows[0].secret) {
@@ -76,14 +76,16 @@ router.post('/login', async (req, res) => {
       });
 
       if (!verified) {
-        return res.status(400).json({ message: 'Código 2FA incorrecto' });
+        return res.status(400).json({ message: 'Código 2FA incorrecto. Verifica tu autenticador.' });
       }
     }
 
     res.status(200).json({ message: 'Login exitoso' });
   } catch (error) {
-    res.status(500).send('Error en el inicio de sesión');
+    console.error('Error en el login:', error); // Log detallado para debugging
+    res.status(500).json({ message: 'Error en el inicio de sesión. Intenta de nuevo más tarde.' });
   }
 });
+
 
 module.exports = router;
