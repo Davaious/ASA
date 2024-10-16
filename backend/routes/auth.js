@@ -1,11 +1,26 @@
-// backend/routes/auth.js
+const crypto = require('crypto');
 const express = require('express');
 const router = express.Router();
 const speakeasy = require('speakeasy');
 const qrcode = require('qrcode');
-const bcrypt = require('bcrypt'); // Asegúrate de importar bcrypt para hashear contraseñas
-const db = require('../config/db');  // Asegúrate de que tu base de datos esté correctamente importada
-const pool = require('../config/db');
+const bcrypt = require('bcrypt'); 
+const db = require('../config/db');  
+
+// Función para cifrar el secreto 2FA
+function encrypt(text) {
+  const cipher = crypto.createCipher('aes-256-cbc', 'clave-secreta');
+  let encrypted = cipher.update(text, 'utf8', 'hex');
+  encrypted += cipher.final('hex');
+  return encrypted;
+}
+
+// Función para descifrar el secreto 2FA
+function decrypt(text) {
+  const decipher = crypto.createDecipher('aes-256-cbc', 'clave-secreta');
+  let decrypted = decipher.update(text, 'hex', 'utf8');
+  decrypted += decipher.final('utf8');
+  return decrypted;
+}
 
 // Ruta de registro con bcrypt
 router.post('/register', async (req, res) => {
@@ -20,28 +35,42 @@ router.post('/register', async (req, res) => {
   }
 });
 
+// Ruta para configurar 2FA
+router.post('/setup', async (req, res) => {
+  const { userId } = req.body;
+  const secret = speakeasy.generateSecret({ name: 'YourAppName' });
+  const encryptedSecret = encrypt(secret.base32);
 
-// Ruta de login
+  try {
+    await db.query('UPDATE users SET secret = $1 WHERE id = $2', [encryptedSecret, userId]);
+    const qrCodeUrl = await qrcode.toDataURL(secret.otpauth_url);
+    res.status(200).json({ qrCodeUrl, secret: secret.base32 });
+  } catch (error) {
+    res.status(500).json({ message: 'Error en el servidor' });
+  }
+});
+
+// Ruta de login con verificación 2FA
 router.post('/login', async (req, res) => {
   const { email, password, token } = req.body;
   
   try {
-    // Verifica que el email existe en la base de datos
     const user = await db.query('SELECT * FROM users WHERE email = $1', [email]);
     if (user.rows.length === 0) {
       return res.status(401).send('Email no registrado');
     }
 
-    // Verifica la contraseña usando bcrypt
     const validPassword = bcrypt.compareSync(password, user.rows[0].password);
     if (!validPassword) {
       return res.status(401).send('Contraseña incorrecta');
     }
 
-    // Si el usuario tiene 2FA habilitado, verifica el token
     if (user.rows[0].secret) {
+      const encryptedSecret = user.rows[0].secret;
+      const decryptedSecret = decrypt(encryptedSecret);
+
       const verified = speakeasy.totp.verify({
-        secret: user.rows[0].secret,
+        secret: decryptedSecret, 
         encoding: 'base32',
         token,
       });
@@ -56,3 +85,5 @@ router.post('/login', async (req, res) => {
     res.status(500).send('Error en el inicio de sesión');
   }
 });
+
+module.exports = router;
