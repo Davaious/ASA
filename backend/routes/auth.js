@@ -7,16 +7,19 @@ const bcrypt = require('bcrypt');
 const db = require('../config/db');  
 
 // Función para cifrar el secreto 2FA
+require('dotenv').config();
+
 function encrypt(text) {
-  const cipher = crypto.createCipher('aes-256-cbc', 'clave-secreta');
+  const cipher = crypto.createCipher('aes-256-cbc', process.env.ENCRYPTION_KEY);
   let encrypted = cipher.update(text, 'utf8', 'hex');
   encrypted += cipher.final('hex');
   return encrypted;
 }
 
+
 // Función para descifrar el secreto 2FA
 function decrypt(text) {
-  const decipher = crypto.createDecipher('aes-256-cbc', 'clave-secreta');
+  const decipher = crypto.createDecipher('aes-256-cbc', process.env.ENCRYPTION_KEY);
   let decrypted = decipher.update(text, 'hex', 'utf8');
   decrypted += decipher.final('utf8');
   return decrypted;
