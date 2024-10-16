@@ -7,55 +7,7 @@ const bcrypt = require('bcrypt'); // Asegúrate de importar bcrypt para hashear 
 const db = require('../config/db');  // Asegúrate de que tu base de datos esté correctamente importada
 const pool = require('../config/db');
 
-// Ruta de registro
-router.post('/register', async (req, res) => {
-  const { email, password } = req.body;
-  try {
-    const newUser = await pool.query('INSERT INTO users (email, password) VALUES ($1, $2) RETURNING *', [email, password]);
-    res.json(newUser.rows[0]);
-  } catch (error) {
-    res.status(500).send('Error al registrar');
-  }
-});
-
-// Ruta de login
-router.post('/login', async (req, res) => {
-  const { email, password } = req.body;
-  try {
-    const user = await pool.query('SELECT * FROM users WHERE email = $1 AND password = $2', [email, password]);
-    if (user.rows.length > 0) {
-      res.json({ message: 'Login exitoso' });
-    } else {
-      res.status(401).send('Credenciales incorrectas');
-    }
-  } catch (error) {
-    res.status(500).send('Error en el inicio de sesión');
-  }
-});
-
-
-
-// Endpoint para configurar 2FA y generar un código QR
-router.post('/setup', async (req, res) => {
-  const { userId } = req.body;
-
-  try {
-    // Generar el secreto para 2FA
-    const secret = speakeasy.generateSecret({ name: 'YourAppName' });
-
-    // Guardar el secreto en la base de datos del usuario
-    await db.query('UPDATE users SET secret = $1 WHERE id = $2', [secret.base32, userId]);
-
-    // Generar el código QR
-    const qrCodeUrl = await qrcode.toDataURL(secret.otpauth_url);
-
-    res.status(200).json({ qrCodeUrl, secret: secret.base32 });
-  } catch (error) {
-    res.status(500).json({ message: 'Error en el servidor' });
-  }
-});
-
-// Endpoint para registrar un usuario
+// Ruta de registro con bcrypt
 router.post('/register', async (req, res) => {
   const { email, password } = req.body;
   const hashedPassword = bcrypt.hashSync(password, 10);
@@ -68,29 +20,39 @@ router.post('/register', async (req, res) => {
   }
 });
 
-// Endpoint para verificar el token 2FA
-router.post('/verify', async (req, res) => {
-  const { userId, token } = req.body;
 
+// Ruta de login
+router.post('/login', async (req, res) => {
+  const { email, password, token } = req.body;
+  
   try {
-    // Obtener el secreto del usuario
-    const user = await db.query('SELECT secret FROM users WHERE id = $1', [userId]);
-
-    // Verificar el token usando speakeasy
-    const verified = speakeasy.totp.verify({
-      secret: user.rows[0].secret,
-      encoding: 'base32',
-      token,
-    });
-
-    if (verified) {
-      res.status(200).json({ message: 'Código 2FA verificado' });
-    } else {
-      res.status(400).json({ message: 'Código 2FA inválido' });
+    // Verifica que el email existe en la base de datos
+    const user = await db.query('SELECT * FROM users WHERE email = $1', [email]);
+    if (user.rows.length === 0) {
+      return res.status(401).send('Email no registrado');
     }
+
+    // Verifica la contraseña usando bcrypt
+    const validPassword = bcrypt.compareSync(password, user.rows[0].password);
+    if (!validPassword) {
+      return res.status(401).send('Contraseña incorrecta');
+    }
+
+    // Si el usuario tiene 2FA habilitado, verifica el token
+    if (user.rows[0].secret) {
+      const verified = speakeasy.totp.verify({
+        secret: user.rows[0].secret,
+        encoding: 'base32',
+        token,
+      });
+
+      if (!verified) {
+        return res.status(400).json({ message: 'Código 2FA incorrecto' });
+      }
+    }
+
+    res.status(200).json({ message: 'Login exitoso' });
   } catch (error) {
-    res.status(500).json({ message: 'Error en el servidor' });
+    res.status(500).send('Error en el inicio de sesión');
   }
 });
-
-module.exports = router;
