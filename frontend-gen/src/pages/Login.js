@@ -44,17 +44,18 @@ const Login = () => {
         />
         <button
           type="submit"
-          className="w-full bg-neon-green text-black py-2 px-4 rounded-lg hover:bg-white hover:text-neon-green transition duration-300"
+          className="w-full bg-neon-green text-white py-2 px-4 rounded-lg hover:bg-black hover:text-neon-green transition duration-300"
         >
           Iniciar Sesión
         </button>
       </form>
       <button
-        className="mt-4 w-full bg-gray-700 text-white p-2 rounded hover:bg-gray-600 transition"
-        onClick={() => navigate('/')} // Botón para volver al Home
-      >
-        Volver al Home
+        className="absolute top-4 right-4 bg-neon-green text-white py-2 px-4 rounded-lg hover:bg-black hover:text-neon-green transition duration-300"
+        onClick={() => navigate('/')}
+        >
+        Home Return
       </button>
+
     </div>
   );
 };

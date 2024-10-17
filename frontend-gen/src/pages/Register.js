@@ -50,6 +50,13 @@ const Register = () => {
           Registrar
         </button>
       </form>
+      <button
+  className="absolute top-4 right-4 bg-neon-green text-white py-2 px-4 rounded-lg hover:bg-black hover:text-neon-green transition duration-300"
+  onClick={() => navigate('/')}
+>
+  Home Return
+</button>
+
       
     </div>
   );
