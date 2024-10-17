@@ -6,14 +6,15 @@ const authRoutes = require('./routes/auth');
 const app = express();
 const PORT = process.env.PORT || 5001;
 
+
+
 // Middleware
 app.use(cors());
 app.use(bodyParser.json());
 
 // Rutas
-app.use('/api/auth', authRoutes);
+app.use('/auth', authRoutes); // Aquí defino las rutas correctamente
 
 // Servidor
-app.listen(PORT, () => {
-  console.log(`Servidor corriendo en el puerto ${PORT}`);
-});
+app.listen(5001, () => console.log('Server running on port 5001'));
+
