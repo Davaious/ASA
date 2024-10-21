@@ -93,6 +93,39 @@ router.post('/login', async (req, res) => {
     console.error('Error en el login:', error);
     res.status(500).json({ message: 'Error en el inicio de sesión. Intenta de nuevo más tarde.' });
   }
+
+  router.post('/register', async (req, res) => {
+    const { email, password } = req.body;
+  
+    // Verificar si se enviaron ambos campos
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Faltan campos obligatorios: email y/o contraseña.' });
+    }
+  
+    try {
+      const hashedPassword = bcrypt.hashSync(password, 10);
+  
+      // Verificar si el email ya está registrado
+      const userExists = await db.query('SELECT * FROM users WHERE email = $1', [email]);
+      if (userExists.rows.length > 0) {
+        return res.status(409).json({ message: 'Este email ya está registrado.' });
+      }
+  
+      await db.query('INSERT INTO users (email, password) VALUES ($1, $2)', [email, hashedPassword]);
+      res.status(201).json({ message: 'Usuario registrado exitosamente' });
+    } catch (error) {
+      if (error.code === '23505') {
+        // Error específico de PostgreSQL para duplicados
+        return res.status(409).json({ message: 'El email ya está registrado en la base de datos.' });
+      }
+      console.error('Error en registro:', error); // Para logging y debugging
+      res.status(500).json({ message: 'Error interno del servidor, por favor intenta nuevamente más tarde.' });
+    }
+  });
+  
+
+
+
 });
 
 module.exports = router;
