@@ -93,7 +93,9 @@ router.post('/login', async (req, res) => {
     console.error('Error en el login:', error);
     res.status(500).json({ message: 'Error en el inicio de sesión. Intenta de nuevo más tarde.' });
   }
-
+      
+  
+            //Aqui se agregan bloques try-catch mas robustos y detalladosen la ruta de registro para capturar diferentes errores
   router.post('/register', async (req, res) => {
     const { email, password } = req.body;
   
